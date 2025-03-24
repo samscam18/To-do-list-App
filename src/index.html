@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Task Manager | Organize Your Day</title>
+  <!-- Bootstrap CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+          <h1 class="mb-0 text-center">
+            <i class="fas fa-check-circle me-2"></i>Task Manager
+          </h1>
+        </div>
+        <div class="card-body">
+          <!-- Add Task Form -->
+          <form id="task-form" class="mb-4">
+            <div class="input-group">
+              <input type="text" id="task-input" class="form-control" placeholder="Add a new task..." required>
+              <button type="submit" class="btn btn-success">
+                <i class="fas fa-plus"></i> Add
+              </button>
+            </div>
+          </form>
+
+          <!-- Task Filter -->
+          <div class="btn-group w-100 mb-3" role="group" aria-label="Task filters">
+            <button type="button" class="btn btn-outline-primary active" data-filter="all">All</button>
+            <button type="button" class="btn btn-outline-primary" data-filter="active">Active</button>
+            <button type="button" class="btn btn-outline-primary" data-filter="completed">Completed</button>
+          </div>
+
+          <!-- Tasks List -->
+          <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                                <span>
+                                    <i class="fas fa-tasks me-2"></i>Tasks
+                                </span>
+              <span class="badge bg-primary" id="task-counter">0</span>
+            </div>
+            <ul id="task-list" class="list-group list-group-flush">
+              <!-- Tasks will be dynamically added here -->
+              <li class="list-group-item text-center text-muted" id="empty-list-message">
+                <i class="fas fa-info-circle me-2"></i>No tasks yet. Add one above!
+              </li>
+            </ul>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="d-flex justify-content-between mt-3">
+            <div>
+              <button id="clear-completed" class="btn btn-warning">
+                <i class="fas fa-broom me-2"></i>Clear Completed
+              </button>
+              <button id="export-tasks" class="btn btn-info ms-2">
+                <i class="fas fa-file-export me-2"></i>Export
+              </button>
+            </div>
+            <button id="clear-all" class="btn btn-danger">
+              <i class="fas fa-trash-alt me-2"></i>Clear All
+            </button>
+          </div>
+        </div>
+        <div class="card-footer text-center text-muted">
+          <small>Your tasks are saved locally on this device</small>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Bootstrap JS Bundle with Popper -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Custom JS -->
+<script src="script.js"></script>
+</body>
+</html>
