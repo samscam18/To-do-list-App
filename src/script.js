@@ -17,12 +17,14 @@ const exportBtn = document.getElementById('export-tasks');
 // Application State
 let tasks = [];
 let currentFilter = 'all';
+let recentlyDeletedTask = null;
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', () => {
     loadTasks();
     renderTasks();
     setupEventListeners();
+    loadDarkModePreference();
 });
 
 /**
@@ -53,6 +55,12 @@ function setupEventListeners() {
             renderTasks();
         });
     });
+
+    // Dark mode toggle
+    const darkModeToggle = document.getElementById('dark-mode-toggle');
+    if (darkModeToggle) {
+        darkModeToggle.addEventListener('click', toggleDarkMode);
+    }
 }
 
 /**
@@ -64,6 +72,11 @@ function addTask(e) {
 
     const taskText = taskInput.value.trim();
     if (taskText === '') return;
+
+    if (tasks.some(task => task.text.toLowerCase() === taskText.toLowerCase())) {
+        showNotification('Task already exists!');
+        return;
+    }
 
     // Create new task object
     const newTask = {
@@ -132,12 +145,29 @@ function editTask(id) {
  * @param {string} id - The task ID
  */
 function deleteTask(id) {
+    const task = tasks.find(task => task.id === id);
+    if (!task) return;
+
     if (!confirm('Are you sure you want to delete this task?')) return;
 
+    recentlyDeletedTask = task;
     tasks = tasks.filter(task => task.id !== id);
     saveTasks();
     renderTasks();
-    showNotification('Task deleted!');
+    showNotification(`Task deleted! <button class="btn btn-link p-0" onclick="undoDelete()">Undo</button>`);
+}
+
+/**
+ * Undo the last deleted task
+ */
+function undoDelete() {
+    if (recentlyDeletedTask) {
+        tasks.unshift(recentlyDeletedTask);
+        recentlyDeletedTask = null;
+        saveTasks();
+        renderTasks();
+        showNotification('Task restored!');
+    }
 }
 
 /**
@@ -179,88 +209,79 @@ function clearAll() {
  * Render the tasks to the DOM based on the current filter
  */
 function renderTasks() {
-    // Apply filter
-    let filteredTasks = tasks;
-    if (currentFilter === 'active') {
-        filteredTasks = tasks.filter(task => !task.completed);
-    } else if (currentFilter === 'completed') {
-        filteredTasks = tasks.filter(task => task.completed);
-    }
+    const filteredTasks = getFilteredTasks();
+    updateTaskCounter(filteredTasks);
+    renderTaskList(filteredTasks);
+}
 
-    // Update counter with appropriate count based on filter
-    if (currentFilter === 'all') {
-        taskCounter.textContent = tasks.length;
-    } else if (currentFilter === 'active') {
-        taskCounter.textContent = tasks.filter(task => !task.completed).length;
-    } else {
-        taskCounter.textContent = tasks.filter(task => task.completed).length;
-    }
+function getFilteredTasks() {
+    if (currentFilter === 'active') return tasks.filter(task => !task.completed);
+    if (currentFilter === 'completed') return tasks.filter(task => task.completed);
+    return tasks;
+}
 
-    // Clear existing list items except the empty message
-    const taskElements = taskList.querySelectorAll('.task-item');
-    taskElements.forEach(element => element.remove());
+function updateTaskCounter(filteredTasks) {
+    taskCounter.textContent = filteredTasks.length;
+}
 
-    // Show empty message if no tasks
-    if (filteredTasks.length === 0) {
-        let emptyMessage = 'No tasks yet. Add one above!';
-        if (currentFilter === 'active') {
-            emptyMessage = 'No active tasks. Good job!';
-        } else if (currentFilter === 'completed') {
-            emptyMessage = 'No completed tasks yet.';
-        }
+function renderTaskList(filteredTasks) {
+    taskList.innerHTML = ''; // Clear existing tasks
+    filteredTasks.forEach(task => renderTask(task));
+}
 
-        emptyListMessage.textContent = emptyMessage;
-        emptyListMessage.style.display = 'block';
-    } else {
-        emptyListMessage.style.display = 'none';
-    }
+function renderTask(task) {
+    const listItem = document.createElement('li');
+    listItem.className = `list-group-item task-item ${task.completed ? 'task-complete' : ''}`;
+    listItem.dataset.id = task.id;
 
-    // Render filtered tasks
-    filteredTasks.forEach(task => {
-        const listItem = document.createElement('li');
-        listItem.className = `list-group-item task-item ${task.completed ? 'task-complete' : ''}`;
-        listItem.dataset.id = task.id;
+    listItem.innerHTML = `
+        <input type="checkbox" class="form-check-input task-checkbox" ${task.completed ? 'checked' : ''} aria-label="Mark task as ${task.completed ? 'incomplete' : 'complete'}">
+        <span class="task-text" tabindex="0">${escapeHtml(task.text)}</span>
+        <div class="task-actions">
+            <button class="btn btn-sm btn-outline-primary edit-task" aria-label="Edit task">
+                <i class="fas fa-edit"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-danger delete-task" aria-label="Delete task">
+                <i class="fas fa-trash-alt"></i>
+            </button>
+        </div>
+    `;
 
-        listItem.innerHTML = `
-            <input type="checkbox" class="form-check-input task-checkbox" ${task.completed ? 'checked' : ''}>
-            <span class="task-text">${escapeHtml(task.text)}</span>
-            <div class="task-actions">
-                <button class="btn btn-sm btn-outline-primary edit-task">
-                    <i class="fas fa-edit"></i>
-                </button>
-                <button class="btn btn-sm btn-outline-danger delete-task">
-                    <i class="fas fa-trash-alt"></i>
-                </button>
-            </div>
-        `;
+    taskList.appendChild(listItem);
 
-        // Add before the empty message
-        taskList.insertBefore(listItem, emptyListMessage);
+    const checkbox = listItem.querySelector('.task-checkbox');
+    const editBtn = listItem.querySelector('.edit-task');
+    const deleteBtn = listItem.querySelector('.delete-task');
 
-        // Add event listeners to the new elements
-        const checkbox = listItem.querySelector('.task-checkbox');
-        const editBtn = listItem.querySelector('.edit-task');
-        const deleteBtn = listItem.querySelector('.delete-task');
-
-        checkbox.addEventListener('change', () => toggleTaskStatus(task.id));
-        editBtn.addEventListener('click', () => editTask(task.id));
-        deleteBtn.addEventListener('click', () => deleteTask(task.id));
-    });
+    checkbox.addEventListener('change', () => toggleTaskStatus(task.id));
+    editBtn.addEventListener('click', () => editTask(task.id));
+    deleteBtn.addEventListener('click', () => deleteTask(task.id));
 }
 
 /**
  * Save tasks to localStorage
  */
 function saveTasks() {
-    localStorage.setItem('tasks', JSON.stringify(tasks));
+    try {
+        localStorage.setItem('tasks', JSON.stringify(tasks));
+    } catch (error) {
+        console.error('Failed to save tasks:', error);
+        showNotification('Error saving tasks!');
+    }
 }
 
 /**
  * Load tasks from localStorage
  */
 function loadTasks() {
-    const savedTasks = localStorage.getItem('tasks');
-    tasks = savedTasks ? JSON.parse(savedTasks) : [];
+    try {
+        const savedTasks = localStorage.getItem('tasks');
+        tasks = savedTasks ? JSON.parse(savedTasks) : [];
+    } catch (error) {
+        console.error('Failed to load tasks:', error);
+        tasks = [];
+        showNotification('Error loading tasks!');
+    }
 }
 
 /**
@@ -276,17 +297,13 @@ function generateId() {
  * @param {string} message - The message to display
  */
 function showNotification(message) {
-    // Check if a toast container already exists
     let toastContainer = document.querySelector('.toast-container');
-
-    // If not, create one
     if (!toastContainer) {
         toastContainer = document.createElement('div');
         toastContainer.className = 'toast-container position-fixed bottom-0 end-0 p-3';
         document.body.appendChild(toastContainer);
     }
 
-    // Create toast element
     const toastElement = document.createElement('div');
     toastElement.className = 'toast';
     toastElement.setAttribute('role', 'alert');
@@ -305,14 +322,12 @@ function showNotification(message) {
 
     toastContainer.appendChild(toastElement);
 
-    // Initialize and show the toast
     const bsToast = new bootstrap.Toast(toastElement, {
         autohide: true,
         delay: 3000
     });
     bsToast.show();
 
-    // Clean up the toast after it's hidden
     toastElement.addEventListener('hidden.bs.toast', () => {
         toastElement.remove();
     });
@@ -327,33 +342,23 @@ function exportTasks() {
         return;
     }
 
-    // Ask user for format preference
     const format = window.confirm('Click OK to export as JSON, Cancel to export as CSV') ? 'json' : 'csv';
 
     let dataStr = '';
     let filename = `tasks_${new Date().toISOString().slice(0, 10)}`;
 
     if (format === 'json') {
-        // Export as JSON
         dataStr = JSON.stringify(tasks, null, 2);
         filename += '.json';
-
         downloadFile(dataStr, filename, 'application/json');
         showNotification('Tasks exported as JSON!');
     } else {
-        // Export as CSV
-        // Create CSV header
         dataStr = 'id,text,completed,createdAt\n';
-
-        // Add task rows
         tasks.forEach(task => {
-            // Handle commas in text by wrapping in quotes
             const escapedText = `"${task.text.replace(/"/g, '""')}"`;
             dataStr += `${task.id},${escapedText},${task.completed},${task.createdAt}\n`;
         });
-
         filename += '.csv';
-
         downloadFile(dataStr, filename, 'text/csv');
         showNotification('Tasks exported as CSV!');
     }
@@ -390,4 +395,23 @@ function escapeHtml(unsafe) {
         .replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
+}
+
+/**
+ * Toggle dark mode
+ */
+function toggleDarkMode() {
+    document.body.classList.toggle('dark-mode');
+    const isDarkMode = document.body.classList.contains('dark-mode');
+    localStorage.setItem('darkMode', isDarkMode);
+}
+
+/**
+ * Load dark mode preference on startup
+ */
+function loadDarkModePreference() {
+    const isDarkMode = localStorage.getItem('darkMode') === 'true';
+    if (isDarkMode) {
+        document.body.classList.add('dark-mode');
+    }
 }

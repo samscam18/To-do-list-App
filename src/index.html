@@ -10,6 +10,8 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <!-- Custom CSS -->
   <link rel="stylesheet" href="styles.css">
+  <!-- Favicon -->
+  <link rel="icon" href="favicon.ico" type="image/x-icon">
 </head>
 <body>
 <div class="container py-5">
@@ -20,12 +22,15 @@
           <h1 class="mb-0 text-center">
             <i class="fas fa-check-circle me-2"></i>Task Manager
           </h1>
+          <button id="dark-mode-toggle" class="btn btn-secondary float-end">
+            <i class="fas fa-moon"></i> Dark Mode
+          </button>
         </div>
         <div class="card-body">
           <!-- Add Task Form -->
           <form id="task-form" class="mb-4">
             <div class="input-group">
-              <input type="text" id="task-input" class="form-control" placeholder="Add a new task..." required>
+              <input type="text" id="task-input" class="form-control" placeholder="Add a new task..." required aria-label="Task input field">
               <button type="submit" class="btn btn-success">
                 <i class="fas fa-plus"></i> Add
               </button>
@@ -42,9 +47,9 @@
           <!-- Tasks List -->
           <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
-                                <span>
-                                    <i class="fas fa-tasks me-2"></i>Tasks
-                                </span>
+              <span>
+                <i class="fas fa-tasks me-2"></i>Tasks
+              </span>
               <span class="badge bg-primary" id="task-counter">0</span>
             </div>
             <ul id="task-list" class="list-group list-group-flush">
@@ -53,19 +58,24 @@
                 <i class="fas fa-info-circle me-2"></i>No tasks yet. Add one above!
               </li>
             </ul>
+            <div id="loading-spinner" class="text-center my-3 d-none">
+              <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+              </div>
+            </div>
           </div>
 
           <!-- Action Buttons -->
           <div class="d-flex justify-content-between mt-3">
             <div>
-              <button id="clear-completed" class="btn btn-warning">
+              <button id="clear-completed" class="btn btn-warning" data-bs-toggle="tooltip" data-bs-placement="top" title="Clear all completed tasks">
                 <i class="fas fa-broom me-2"></i>Clear Completed
               </button>
               <button id="export-tasks" class="btn btn-info ms-2">
                 <i class="fas fa-file-export me-2"></i>Export
               </button>
             </div>
-            <button id="clear-all" class="btn btn-danger">
+            <button id="clear-all" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#confirm-clear-all">
               <i class="fas fa-trash-alt me-2"></i>Clear All
             </button>
           </div>
@@ -77,6 +87,32 @@
     </div>
   </div>
 </div>
+
+<!-- Confirmation Modal -->
+<div class="modal fade" id="confirm-clear-all" tabindex="-1" aria-labelledby="confirmClearAllLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="confirmClearAllLabel">Confirm Clear All</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        Are you sure you want to clear all tasks? This action cannot be undone.
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-danger" id="confirm-clear-all-btn">Clear All</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Footer -->
+<footer class="text-center mt-5">
+  <small>
+    Made with <i class="fas fa-heart text-danger"></i> by <a href="https://github.com/samscam18/To-do-list-App" target="_blank">Samscam_18</a>
+  </small>
+</footer>
 
 <!-- Bootstrap JS Bundle with Popper -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
